@@ -10,8 +10,7 @@ Uses **AES-256-GCM** (authenticated encryption) with a **PBKDF2-derived key**.
 ```
 ezlock_project/
 ├── main.py                   # Entry point  →  python main.py <command>
-├── pyproject.toml            # Package metadata + `ezlock` console-script
-├── requirements.txt
+├── pyproject.toml            # Package metadata
 └── src/
     └── ezlock/
         ├── __init__.py       # Public API surface
@@ -28,7 +27,7 @@ ezlock_project/
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Run directly
 python main.py encrypt Documents/
