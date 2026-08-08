@@ -5,7 +5,17 @@ description = "Password-based folder encryption using AES-256-GCM + PBKDF2"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "click>=8.4.1",
-    "cryptography>=48.0.0",
-    "pyinstaller>=6.20.0",
+    "typer>=0.27.1",
+]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+
+[dependency-groups]
+dev = [
+    "auto-py-to-exe>=2.50.1",
+    "pyrefly>=1.2.0",
 ]

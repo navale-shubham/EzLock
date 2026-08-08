@@ -5,14 +5,12 @@ safely extracting one back to disk.
 
 import io
 import json
-import os
 import struct
 import tarfile
+from pathlib import Path
 
 
-# ── Compression ─────────────────────────────────────────────────────────────────
-
-def compress_folder(folder_path: str) -> tuple[bytes, str]:
+def compress_folder(folder_path: Path) -> tuple[bytes, str]:
     """
     Compress *folder_path* into an in-memory tar.gz archive.
 
@@ -30,8 +28,8 @@ def compress_folder(folder_path: str) -> tuple[bytes, str]:
     Returns:
         A tuple of (plaintext_bytes, folder_name).
     """
-    folder_path = os.path.abspath(folder_path)
-    folder_name = os.path.basename(folder_path)
+    folder_path = folder_path.resolve()
+    folder_name = folder_path.stem
 
     # Stream all files into an in-memory gzip-compressed tar archive
     buf = io.BytesIO()
@@ -48,13 +46,11 @@ def compress_folder(folder_path: str) -> tuple[bytes, str]:
     return plaintext, folder_name
 
 
-# ── Extraction ──────────────────────────────────────────────────────────────────
-
-def extract_archive(archive_bytes: bytes, output_dir: str) -> None:
+def extract_archive(archive_bytes: bytes, output_dir: Path) -> None:
     """
     Extract a tar.gz archive from *archive_bytes* into *output_dir*.
 
-    Security: every member path is resolved with os.path.realpath and checked
+    Security: every member path is resolved and checked
     against *output_dir* to block path-traversal attacks (e.g. members that
     contain ``../`` or absolute paths).
 
@@ -65,14 +61,13 @@ def extract_archive(archive_bytes: bytes, output_dir: str) -> None:
     Raises:
         ValueError: If any archive member would escape *output_dir*.
     """
-    real_output = os.path.realpath(output_dir)
+    real_output = output_dir.resolve()
     buf = io.BytesIO(archive_bytes)
 
     with tarfile.open(fileobj=buf, mode="r:gz") as tar:
-        # Validate every member before extracting anything
         for member in tar.getmembers():
-            member_path = os.path.realpath(os.path.join(output_dir, member.name))
-            if not member_path.startswith(real_output):
+            member_path = (real_output / member.name).resolve()
+            if not member_path.is_relative_to(real_output):
                 raise ValueError(
                     f"Archive member '{member.name}' would escape the output "
                     "directory. Aborting extraction."

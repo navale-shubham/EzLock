@@ -3,8 +3,6 @@ Shared configuration values for the ezlock file format and cryptographic
 parameters.
 """
 
-# ── File format ────────────────────────────────────────────────────────────────
-
 # Extension applied to every encrypted output file (e.g. Documents → Documents.ez)
 EZ_EXTENSION: str = ".ez"
 
@@ -18,7 +16,7 @@ EZ_EXTENSION: str = ".ez"
 HEADER_MAGIC: bytes = b"EZLOCK01"
 
 
-# ── Cryptographic parameters ────────────────────────────────────────────────────
+# Cryptographic parameters
 
 # PBKDF2-HMAC-SHA256 iteration count.
 # NIST SP 800-132 (2023) recommends a minimum of 600 000 for SHA-256.

@@ -11,7 +11,7 @@ import json
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from .constants import (
+from constants import (
     HEADER_MAGIC,
     KEY_SIZE,
     NONCE_SIZE,
@@ -19,8 +19,6 @@ from .constants import (
     SALT_SIZE,
 )
 
-
-# ── Key derivation ──────────────────────────────────────────────────────────────
 
 def derive_key(password: str, salt: bytes) -> bytes:
     """
@@ -41,8 +39,6 @@ def derive_key(password: str, salt: bytes) -> bytes:
         dklen=KEY_SIZE,
     )
 
-
-# ── Encryption ──────────────────────────────────────────────────────────────────
 
 def encrypt_payload(plaintext: bytes, password: str) -> bytes:
     """
@@ -67,8 +63,6 @@ def encrypt_payload(plaintext: bytes, password: str) -> bytes:
     return HEADER_MAGIC + salt + nonce + ciphertext
 
 
-# ── Decryption ──────────────────────────────────────────────────────────────────
-
 def decrypt_payload(ez_bytes: bytes, password: str) -> tuple[bytes, str]:
     """
     Decrypt a .ez blob and return the embedded tar.gz archive plus folder name.
@@ -87,18 +81,18 @@ def decrypt_payload(ez_bytes: bytes, password: str) -> tuple[bytes, str]:
         ValueError: If the magic header is invalid, the password is wrong,
                     or the ciphertext has been tampered with.
     """
-    # ── Validate magic ───────────────────────────────────────────────────────
+    # Validate magic
     if not ez_bytes.startswith(HEADER_MAGIC):
         raise ValueError("Not a valid .ez file (bad magic bytes).")
 
-    # ── Parse header fields ──────────────────────────────────────────────────
+    # Parse header fields
     offset = len(HEADER_MAGIC)
 
     salt  = ez_bytes[offset : offset + SALT_SIZE];  offset += SALT_SIZE
     nonce = ez_bytes[offset : offset + NONCE_SIZE]; offset += NONCE_SIZE
     ciphertext = ez_bytes[offset:]
 
-    # ── Authenticated decryption ─────────────────────────────────────────────
+    # Authenticated decryption
     key = derive_key(password, salt)
     try:
         plaintext = AESGCM(key).decrypt(nonce, ciphertext, None)
@@ -106,7 +100,7 @@ def decrypt_payload(ez_bytes: bytes, password: str) -> tuple[bytes, str]:
         # GCM tag mismatch → wrong password or corrupted bytes
         raise ValueError("Decryption failed. Wrong password or corrupted file.")
 
-    # ── Parse embedded metadata ──────────────────────────────────────────────
+    # Parse embedded metadata
     # Plaintext layout: 4-byte LE metadata length | metadata JSON | tar.gz bytes
     meta_len     = struct.unpack("<I", plaintext[:4])[0]
     metadata     = json.loads(plaintext[4 : 4 + meta_len].decode("utf-8"))
