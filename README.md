@@ -8,17 +8,22 @@ Uses **AES-256-GCM** (authenticated encryption) with a **PBKDF2-derived key**.
 ## Project Structure
 
 ```
-ezlock_project/
-├── main.py                   # Entry point  →  python main.py <command>
-├── pyproject.toml            # Package metadata
-└── src/
-    └── ezlock/
-        ├── __init__.py       # Public API surface
-        ├── cli.py            # Click commands (encrypt / decrypt)
-        ├── operations.py     # High-level workflows
-        ├── crypto.py         # AES-256-GCM + PBKDF2 key derivation
-        ├── archive.py        # tar.gz compress / safe-extract
-        └── constants.py      # Shared magic values
+EzLock/
+├── pyproject.toml            # Package metadata (v2.0.0)
+├── README.md
+├── uv.lock
+├── src/
+│   ├── main.py               # Typer CLI entry point
+│   ├── operations.py          # High-level encrypt / decrypt workflows
+│   ├── crypto.py              # AES-256-GCM + PBKDF2 key derivation
+│   ├── archive.py             # tar.gz compress / safe-extract
+│   └── constants.py           # Shared magic values & crypto parameters
+└── tests/
+    ├── conftest.py            # Shared fixtures (tmp folders, passwords, …)
+    ├── test_archive.py        # Compression & extraction tests
+    ├── test_constants.py      # Constant-value sanity checks
+    ├── test_crypto.py         # Encrypt / decrypt / KDF tests
+    └── test_operations.py     # End-to-end workflow tests
 ```
 
 ---
@@ -29,10 +34,11 @@ ezlock_project/
 # Install dependencies
 uv sync
 
-# Run directly
-python main.py encrypt Documents/
-python main.py decrypt Documents.ez
+# Encrypt a folder (will prompt for password)
+uv run python src/main.py encrypt Documents/
 
+# Decrypt a .ez file (will prompt for password)
+uv run python src/main.py decrypt Documents.ez
 ```
 
 ---
@@ -40,24 +46,34 @@ python main.py decrypt Documents.ez
 ## CLI Reference
 
 ```
-ezlock encrypt [OPTIONS] FOLDER
-ezlock decrypt [OPTIONS] FILE
+python src/main.py encrypt FOLDER
+python src/main.py decrypt FILE
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-p, --password TEXT` | Supply password inline (omit for secure prompt) |
-| `-h, --help` | Show help and exit |
+Both commands prompt interactively for a password (input is masked with `*`).  
+The `encrypt` command asks you to confirm the password a second time.
 
 **Examples:**
 ```bash
-# Password prompt
-ezlock encrypt ~/Documents
-ezlock decrypt ~/Documents.ez
+# Encrypt ~/Documents → ~/Documents.ez
+uv run python src/main.py encrypt ~/Documents
 
-# Inline password 
-ezlock encrypt secrets/ -p "my passphrase"
-ezlock decrypt secrets.ez  -p "my passphrase"
+# Decrypt ~/Documents.ez → ~/Documents
+uv run python src/main.py decrypt ~/Documents.ez
+```
+
+---
+
+## Running Tests
+
+All tests use **pytest** and live in the `tests/` directory.
+
+```bash
+# Run the full suite
+uv run pytest
+
+# Verbose output
+uv run pytest ./tests -v
 ```
 
 ---
@@ -66,7 +82,7 @@ ezlock decrypt secrets.ez  -p "my passphrase"
 
 ### Encryption
 1. Folder → in-memory **tar.gz** (never touches disk unencrypted).
-2. Metadata header `{"folder_name": "..."}` prepended so the name survives renaming.
+2. Metadata header `{"folder_name": "…"}` prepended so the original name survives renaming.
 3. Random **32-byte salt** + **12-byte nonce** generated via `secrets`.
 4. **256-bit AES key** derived from password via **PBKDF2-HMAC-SHA256** (600 000 iterations).
 5. **AES-256-GCM** encrypts + authenticates the payload.
@@ -92,3 +108,15 @@ ezlock decrypt secrets.ez  -p "my passphrase"
 | Nonce | 96-bit random per encryption |
 | Integrity | GCM tag detects wrong passwords and corruption |
 | Path safety | Archive members validated before extraction |
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| [cryptography](https://pypi.org/project/cryptography/) ≥ 50.0.0 | AES-256-GCM via `AESGCM` |
+| [typer](https://pypi.org/project/typer/) ≥ 0.27.1 | CLI framework |
+| [pytest](https://pypi.org/project/pytest/) ≥ 9.1.1 | Test runner |
+
+**Requires Python ≥ 3.14**

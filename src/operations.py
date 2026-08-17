@@ -1,10 +1,3 @@
-"""
-High-level workflow functions that orchestrate the individual modules:
-
-  encrypt_folder  →  validate → compress → encrypt → write → delete original
-  decrypt_folder  →  validate → read → decrypt → extract → delete .ez file
-"""
-
 import os
 import shutil
 from pathlib import Path
@@ -43,7 +36,7 @@ def encrypt_folder(folder_path: Path, password: str) -> Path:
         raise FileExistsError(f"Output file '{output_path}' already exists.")
 
     # Compress → Encrypt
-    print(f"[ezlock] Encrypting '{folder_path}' …")
+    print(f"Encrypting '{folder_path}' …")
     print(f"  Compressing '{folder_path.name}' …")
     plaintext, _ = compress_folder(folder_path)
 
@@ -93,7 +86,7 @@ def decrypt_folder(ez_path: Path, password: str) -> Path:
         print(f"Warning: file does not have '{EZ_EXTENSION}' extension. Proceeding …")
 
     # Decrypt
-    print(f"[ezlock] Decrypting '{ez_path}' …")
+    print(f"Decrypting '{ez_path}' …")
     print("  Deriving key (this may take a moment) …")
 
     with open(ez_path, "rb") as fh:
